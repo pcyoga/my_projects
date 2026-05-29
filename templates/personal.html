@@ -1,0 +1,301 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<div class="container mt-4">
+
+  <!-- HEADER -->
+   <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">👤 User Details</h5>
+    <a href="{{ url_for('add_personal') }}" 
+   class="btn btn-primary btn d-flex align-items px-2 py-2"
+   style="width: fit-content;">
+  <i class="bi bi-plus-lg me-1"></i> 
+  Add User
+</a>
+</div>
+
+  <!-- SCROLL CONTAINER -->
+  <div class="scroll-container">
+    <div class="row">
+
+      {% for row in details_list %}
+      <div class="col-lg-4 col-md-6 mb-4">
+
+        <div class="card profile-card shadow-sm border-0 p-4 text-center h-100 position-relative">
+
+          <!-- ACTION ICONS -->
+          <div class="position-absolute top-0 end-0 p-2 d-flex">
+            <a href="{{ url_for('edit_personal', id=row.id) }}" class="text-primary me-2">
+              <i class="fas fa-edit"></i>
+            </a>
+            <a href="{{ url_for('delete_personal', id=row.id) }}"
+               class="text-danger"
+               onclick="return confirm('Delete this profile?')">
+              <i class="fas fa-trash"></i>
+            </a>
+          </div>
+
+          <!-- AVATAR -->
+           <div class="avatar-circle mx-auto mb-3">
+            {% if row.image %}
+            <img src="{{ url_for('static', filename='uploads/' + row.image) }}"
+            class="profile-img">
+            {% else %}
+            {{ row.full_name[0] }}
+            {% endif %}
+          </div>
+
+          <!-- NAME -->
+          <h5 class="mb-2">{{ row.full_name }}</h5>
+
+          <hr class="my-3">
+
+          <!-- SALARY -->
+          {% if row.salary %}
+            <p class="mb-2">
+              <strong>Current Month's Salary:</strong>
+              {{ row.salary }} {{ row.currency }}
+            </p>
+          {% else %}
+            <p class="text-muted mb-2">No salary added</p>
+          {% endif %}
+
+          <!-- BUTTONS -->
+          <div class="d-flex justify-content-center gap-2 mt-3">
+            <a href="{{ url_for('add_salary', person_id=row.id) }}"
+               class="btn btn-success btn-sm">
+              Add Salary
+            </a>
+
+            <button class="btn btn-info btn-sm"
+                    onclick="openSalaryModal('{{ row.id }}')">
+              Salary Info
+            </button>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="salaryModal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="mb-0">Salary Info</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <table class="table table-bordered text-center">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Year</th>
+              <th id="salaryHeader">Salary</th>
+              <th id="convertedHeader">Converted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="salaryTableBody"></tbody>
+        </table>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+
+function openSalaryModal(personId) {
+
+    window.currentPersonId = personId;
+
+    fetch(`/salary_info/${personId}`)
+        .then(res => res.json())
+        .then(data => {
+
+            let rows = "";
+
+            if (data.length === 0) {
+                rows = `<tr><td colspan="5">No data</td></tr>`;
+            } else {
+
+                // Set headers once
+                document.getElementById("salaryHeader").innerText =
+                    `Salary (${data[0].user_currency})`;
+
+                document.getElementById("convertedHeader").innerText =
+                    `Converted (${data[0].base_currency})`;
+
+                data.forEach(row => {
+
+                    rows += `
+<tr>
+<td>${row.month_name}</td>
+<td>${row.year}</td>
+
+<td id="salary_text_${row.id}">
+    ${row.salary}
+</td>
+
+<td id="salary_input_${row.id}" style="display:none;">
+    <input type="number"
+           id="input_${row.id}"
+           value="${row.salary}"
+           class="form-control form-control-sm">
+</td>
+
+<td>${row.converted_salary}</td>
+
+<td>
+  <div class="d-flex justify-content-center gap-1">
+
+    <button class="btn btn-primary btn-sm"
+            onclick="enableEdit(${row.id})">✏️</button>
+
+    <button class="btn btn-success btn-sm"
+            id="save_${row.id}"
+            style="display:none;"
+            onclick="updateSalary(${row.id})">✔</button>
+
+    <button class="btn btn-secondary btn-sm"
+            id="cancel_${row.id}"
+            style="display:none;"
+            onclick="cancelEdit(${row.id}, '${row.salary}')">✖</button>
+
+    <button class="btn btn-danger btn-sm"
+            onclick="deleteSalary(${row.id})">🗑</button>
+
+  </div>
+</td>
+</tr>`;
+                });
+            }
+
+            document.getElementById("salaryTableBody").innerHTML = rows;
+
+            new bootstrap.Modal(document.getElementById("salaryModal")).show();
+        });
+}
+
+
+function enableEdit(id) {
+    document.getElementById(`salary_text_${id}`).style.display = "none";
+    document.getElementById(`salary_input_${id}`).style.display = "table-cell";
+
+    document.getElementById(`save_${id}`).style.display = "inline-block";
+    document.getElementById(`cancel_${id}`).style.display = "inline-block";
+}
+
+
+function cancelEdit(id, value) {
+    document.getElementById(`salary_text_${id}`).style.display = "table-cell";
+    document.getElementById(`salary_input_${id}`).style.display = "none";
+
+    document.getElementById(`input_${id}`).value = value;
+
+    document.getElementById(`save_${id}`).style.display = "none";
+    document.getElementById(`cancel_${id}`).style.display = "none";
+}
+
+
+function updateSalary(id) {
+
+    let salary = document.getElementById(`input_${id}`).value;
+
+    fetch(`/edit_salary/${id}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `salary=${salary}`
+    })
+    .then(() => {
+        showToast("Salary updated ✅");
+        reloadModal();
+    });
+}
+
+
+function deleteSalary(id) {
+
+    if (!confirm("Delete this record?")) return;
+
+    fetch(`/delete_salary/${id}`)
+        .then(() => {
+            showToast("Deleted successfully 🗑", "danger");
+            reloadModal();
+        });
+}
+
+
+function reloadModal() {
+    openSalaryModal(window.currentPersonId);
+}
+
+
+function showToast(message, type="success") {
+
+    let toast = document.createElement("div");
+
+    toast.className = `alert alert-${type}`;
+    toast.innerText = message;
+
+    document.getElementById("toastBox").appendChild(toast);
+
+    setTimeout(() => toast.remove(), 2000);
+}
+
+</script>
+
+<!-- STYLES -->
+<style>
+
+.scroll-container {
+  max-height: 75vh;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.profile-card a i {
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.profile-card a i:hover {
+  transform: scale(1.2);
+}
+
+.avatar-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #0d6efd;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+</style>
+
+<!-- TOAST -->
+<div id="toastBox"
+     style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+</div>
+
+{% endblock %}

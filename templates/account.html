@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h3>Account</h3>
+
+<div class="list-group">
+
+    <!-- Personal Details -->
+    <a href="{{ url_for('personal') }}" 
+       class="list-group-item list-group-item-action">
+        👤 Personal Details
+    </a>
+
+    <!-- Change Password -->
+    <a href="{{ url_for('change_password') }}" 
+       class="list-group-item list-group-item-action">
+        🔐 Change Password
+    </a>
+
+</div>
+
+{% endblock %}

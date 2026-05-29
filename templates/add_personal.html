@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="center-container">
+
+  <!-- Back Button OUTSIDE card -->
+  <div style="width: 500px;" class="mb-3">
+
+    <!-- Back Button -->
+    <div class="mb-3">
+      <button onclick="history.back()" class="btn btn-secondary">
+        ← Back
+      </button>
+    </div>
+
+    <!-- CARD -->
+    <div class="card p-4 shadow">
+      <h2 class="text-center mb-4">Add Personal Details</h2>
+
+      <!-- 🔥 IMPORTANT: enctype added -->
+      <form method="POST" enctype="multipart/form-data">
+
+        <!-- Full Name -->
+        <div class="row mb-3">
+          <div class="col">
+            <label class="form-label">Full Name</label>
+            <input type="text"
+                   class="form-control"
+                   name="full_name"
+                   placeholder="Enter your full name"
+                   required>
+          </div>
+        </div>
+
+        <!-- Currency -->
+        <div class="mb-3">
+          <label class="form-label">Currency Type</label>
+          <select name="currency" class="form-control" id="currencySelect">
+            <option value="INR">₹ INR</option>
+            <option value="USD">$ USD</option>
+            <option value="GBP">£ GBP</option>
+            <option value="EUR">€ EUR</option>
+          </select>
+        </div>
+
+        <!-- Profile Image Upload (Optional) -->
+        <div class="mb-3">
+          <label class="form-label">Upload Profile Image (Optional)</label>
+          <input type="file"
+                 name="profile_image"
+                 class="form-control"
+                 accept="image/*">
+        </div>
+
+        <!-- Submit -->
+        <div class="text-center">
+          <button type="submit" class="btn btn-success px-4">
+            Save Details
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const currencySelect = document.getElementById("currencySelect");
+
+    function updateSalaryLabel() {
+        const currency = currencySelect.value;
+        // (you don’t currently have salaryLabel in this page, so keeping safe)
+    }
+
+    updateSalaryLabel();
+    currencySelect.addEventListener("change", updateSalaryLabel);
+
+});
+</script>
+
+{% endblock %}

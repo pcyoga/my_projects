@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+  <!-- Back Button -->
+  <button onclick="history.back()" class="btn btn-outline-secondary mb-3">
+    ← Back
+  </button>
+
+  <div class="d-flex justify-content-center">
+
+    <div class="card p-4 shadow" style="width:500px;">
+
+      <h2 class="text-center mb-4">Edit Personal Details</h2>
+
+      <form method="POST" enctype="multipart/form-data">
+
+        <!-- ✅ Current Image Preview -->
+        {% if details.image %}
+          <div class="text-center mb-3">
+            <img src="{{ url_for('static', filename='uploads/' + details.image) }}"
+                 style="width:80px;height:80px;border-radius:50%;object-fit:cover;">
+          </div>
+
+          <!-- ✅ Remove Image Button -->
+          <div class="text-center mb-3">
+            <button type="submit"
+                    name="remove_image"
+                    value="1"
+                    class="btn btn-danger btn-sm">
+              Remove Image
+            </button>
+          </div>
+        {% endif %}
+
+        <!-- Full Name -->
+        <div class="mb-3">
+          <label class="form-label">Full Name</label>
+          <input type="text"
+                 class="form-control"
+                 name="full_name"
+                 value="{{ details.full_name }}"
+                 required>
+        </div>
+
+        <!-- Currency -->
+        <div class="mb-3">
+          <label class="form-label">Currency</label>
+          <select name="currency" class="form-select" required>
+
+            <option value="INR" {% if details.currency == "INR" %}selected{% endif %}>₹ INR</option>
+            <option value="USD" {% if details.currency == "USD" %}selected{% endif %}>$ USD</option>
+            <option value="GBP" {% if details.currency == "GBP" %}selected{% endif %}>£ GBP</option>
+            <option value="EUR" {% if details.currency == "EUR" %}selected{% endif %}>€ EUR</option>
+
+          </select>
+        </div>
+
+        <!-- Upload New Image -->
+        <div class="mb-3">
+          <label class="form-label">Update Profile Image (Optional)</label>
+          <input type="file"
+                 name="profile_image"
+                 class="form-control"
+                 accept="image/*">
+        </div>
+
+        <!-- Submit -->
+        <button class="btn btn-success w-100">
+          Update
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

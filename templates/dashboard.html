@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Dashboard</h2>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h5>Total spent this month: ₹{{ '%.2f'|format(total_month) }}</h5>
+    {% if personal %}
+      <p>Monthly salary: ₹{{ '%.2f'|format(personal.monthly_salary|default(0)) }}</p>
+    {% else %}
+      <p class="text-warning">Please complete your <a href="{{ url_for('personal') }}">personal details</a> so we can notify you accurately.</p>
+    {% endif %}
+    {% if exceeded %}
+      <div class="alert alert-danger">{{ message }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<p>Click "Open Power BI" in the navbar to view your dashboard (powered by :contentReference[oaicite:2]{index=2}).</p>
+{% endblock %}

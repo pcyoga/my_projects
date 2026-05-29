@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="container">
+
+<div class="card profile-card p-4 mx-auto" style="max-width:650px;">
+
+<h4 class="mb-4 d-flex align-items-center">
+<i class="bi bi-person-circle me-2 profile-icon"></i>
+Account Details
+</h4>
+
+<!-- ADD FORM START HERE -->
+<form method="POST">
+
+<table class="table table-borderless profile-table">
+
+
+<tr>
+<th>Full Name</th>
+<td>
+{% if edit_mode %}
+<input type="text" name="full_name" value="{{ user.full_name }}" class="form-control profile-input">
+{% else %}
+{{ user.full_name }}
+{% endif %}
+</td>
+</tr>
+
+<tr>
+<th>Email</th>
+<td>
+{% if edit_mode %}
+<input type="email" name="email" value="{{ user.email }}" class="form-control">
+{% else %}
+{{ user.email }}
+{% endif %}
+</td>
+</tr>
+
+<tr>
+<th>Phone</th>
+<td>
+{% if edit_mode %}
+<input type="text" name="phone" value="{{ user.phone }}" class="form-control">
+{% else %}
+{{ user.phone }}
+{% endif %}
+</td>
+</tr>
+
+<tr>
+<th>Account Created</th>
+<td>
+{{ user.created_at.strftime("%d-%b-%Y") if user.created_at else "" }}
+</td>
+</tr>
+
+</table>
+
+<!-- BUTTONS -->
+
+{% if edit_mode %}
+<div class="text-end mt-3">
+
+<button type="submit" class="btn btn-success btn-profile me-2">
+<i class="bi bi-check-circle"></i> Save
+</button>
+
+<a href="{{ url_for('account_details') }}" class="btn btn-secondary btn-profile">
+Cancel
+</a>
+
+</div>
+{% else %}
+
+<div class="text-end mt-3">
+
+<a href="{{ url_for('account_details') }}?edit=true" 
+class="btn btn-primary btn-profile">
+<i class="bi bi-pencil-square"></i> Edit Profile
+</a>
+
+</div>
+
+{% endif %}
+
+</form>
+<!-- FORM END HERE -->
+
+</div>
+
+{% endblock %}

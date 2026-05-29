@@ -1,0 +1,706 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+{% set currency_symbols = {
+    'INR':'₹',
+    'USD':'$',
+    'EUR':'€',
+    'GBP':'£',
+    'JPY':'¥',
+    'AUD':'A$',
+    'CAD':'C$'
+} %}
+
+
+<div class="container-fluid">
+
+<!-- BACK BUTTON -->
+<div class="mb-3">
+<a href="{{ url_for('expenses') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Back
+</a>
+</div>
+
+<div class="row">
+
+<!-- LEFT SIDE : ADD EXPENSE -->
+
+<div class="col-md-4">
+
+<div class="card shadow-sm p-4 mb-4">
+
+<h4 class="mb-3">Add Expense - {{ user_name }}</h4>
+
+<!-- <div id="budgetAlert" 
+     style="
+        display:none;
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 250px;">
+</div> -->
+
+<form method="POST"
+action="{{ url_for('add_expense', person_id=person_id) }}"
+id="expenseForm">
+
+<input type="hidden" name="person_id" value="{{ person_id }}">
+
+
+<div style="display: flex; align-items: center; gap: 15px">
+    <!-- Salary Dropdown -->
+    <div>
+        <label>Salary (Month/Year)</label>
+        <select id="salarySelect" name="salary_id" class="form-control" required>
+    <option value="">-- Select Month --</option>
+
+    {% set month_map = {
+        1:'Jan', 2:'Feb', 3:'Mar', 4:'Apr',
+        5:'May', 6:'Jun', 7:'Jul', 8:'Aug',
+        9:'Sep', 10:'Oct', 11:'Nov', 12:'Dec'
+    } %}
+
+    {% for sal in salaries %}
+    <option 
+    value="{{ sal.id }}"
+    data-salary="{{ sal.salary }}"
+    data-month="{{ sal.month }}"
+    data-year="{{ sal.year }}"
+    {% if selected_salary_id and (selected_salary_id|string) == (sal.id | string) %}selected{% endif %}>
+    
+    {{ month_map[sal.month|int] }}-{{ sal.year }}
+</option>
+    {% endfor %}
+</select>
+    </div>
+
+    <!-- Salary Display -->
+    <div>
+        <label>Salary</label>
+        <p id="salaryAmount">₹0</p>
+    </div>
+
+    <!-- Balance Display -->
+    <div>
+        <label>Balance</label>
+        <p id="balanceAmount">₹0</p>
+    </div>
+</div>
+
+
+
+<!-- CATEGORY -->
+
+<div class="row mb-3">
+
+<div class="col-md-8">
+
+<label class="form-label">Category</label>
+
+<select name="category"
+id="categoryDropdown"
+class="form-select"
+required>
+
+<option value="">Select Category</option>
+
+</select>
+
+</div>
+
+<div class="col-md-4 d-flex align-items-end">
+
+<button type="button"
+class="btn btn-outline-primary w-100"
+data-bs-toggle="modal"
+data-bs-target="#categoryModal">
+
++ Add
+
+</button>
+
+</div>
+
+</div>
+
+<!-- DATE -->
+
+<div class="mb-3">
+
+<label class="form-label">Expense Date</label>
+
+<input type="date"
+name="expense_date"
+id="expenseDate"
+class="form-control"
+required>
+
+</div>
+
+
+<!-- AMOUNT -->
+
+<div class="mb-3">
+
+<label class="form-label">
+Amount ({{ currency }})
+</label>
+
+<input type="number"
+id="amount"
+name="amount"
+class="form-control"
+step="0.01"
+placeholder="Enter amount"
+required>
+
+</div>
+
+<!-- NOTE -->
+
+<div class="mb-3">
+
+<label class="form-label">Note</label>
+
+<textarea name="description"
+class="form-control"
+rows="3"
+placeholder="Optional description"></textarea>
+
+</div>
+
+<button type="submit"
+class="btn btn-primary w-100"
+id="addExpenseBtn">
+
+Add Expense
+
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+
+<!-- RIGHT SIDE : EXPENSE LIST -->
+
+<div class="col-md-8">
+
+<div class="card shadow-sm p-4">
+
+<h4 class="mb-3">Expenses List</h4>
+
+<div style="height:524px; overflow-y:auto; overflow-x:auto;">
+  <table class="table table-striped table-hover" style="width:150%;">
+
+
+<thead class="table-light sticky-header">
+
+
+<tr>
+<th>Date</th>
+<th>Category</th>
+<th class="text-center">Amount ({{ currency }})</th>
+<th class="text-center">Amount ({{ base_currency }})</th>
+<th class="text-center">Year-Month</th>
+{% if prefs and prefs.show_notes == 1 %}
+<th style="width:80px;" class="text-center">Note</th>
+{% endif %}
+
+<th style="min-width:150px;" class="text-center">Action</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for e in expenses %}
+
+<tr>
+
+<td>{{ e.expense_date.strftime("%d/%m/%Y") if e.expense_date else "" }}</td>
+
+<td>{{ e.category }}</td>
+
+<td>
+  {{ currency_symbols.get(e.currency, e.currency) }}
+  {{ "{:,.2f}".format(e.amount) }}
+</td>
+
+<td class="text-success">
+  {{ currency_symbols.get(base_currency, base_currency) }}
+  {{ "{:,.2f}".format(e.amount_base) }}
+</td>
+
+<td>
+  {{ e.expense_date.strftime("%Y-%b") if e.expense_date else "" }}
+</td>
+
+{% if prefs and prefs.show_notes == 1 %}
+<td>
+  {% if e.note %}
+    <a href="#" onclick="showNote(`{{ e.note }}`)">📩</a>
+  {% else %}
+      -
+  {% endif %}
+</td>
+{% endif %}
+
+
+  <!-- edit/delete buttons -->
+<td class="text-center align-middle">
+    <div class="d-flex justify-content-center align-items-center gap-2">
+
+        <!-- EDIT BUTTON -->
+        <a href="{{ url_for('edit_expense', expense_id=e.id) }}"
+           class="btn btn-sm btn-warning"
+           title="Edit">
+            <i class="bi bi-pencil"></i>
+        </a>
+
+        <!-- DELETE FORM -->
+        <form method="POST"
+              action="{{ url_for('delete_expense', expense_id=e.id) }}"
+              onsubmit="return confirm('Delete this expense?')">
+
+            <!-- 🔥 IMPORTANT: KEEP CONTEXT -->
+            <input type="hidden" name="person_id" value="{{ person_id }}">
+            <input type="hidden" name="salary_id" value="{{ selected_salary_id }}">
+
+            <button type="submit"
+                    class="btn btn-sm btn-danger"
+                    title="Delete">
+                <i class="bi bi-trash"></i>
+            </button>
+
+        </form>
+
+    </div>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- CATEGORY MODAL -->
+
+<div class="modal fade"
+id="categoryModal"
+tabindex="-1">
+
+<div class="modal-dialog modal-dialog-centered">
+
+<div class="modal-content shadow">
+
+<div class="modal-header bg-primary text-white">
+
+<h5 class="modal-title">Manage Categories</h5>
+
+<button class="btn-close btn-close-white"
+data-bs-dismiss="modal"></button>
+
+</div>
+
+<div class="modal-body">
+
+<h6 class="mb-3">Add New Category</h6>
+
+<div class="input-group mb-3">
+
+<span class="input-group-text">📂</span>
+
+<input type="text"
+id="newCategory"
+class="form-control"
+placeholder="Enter category name">
+
+</div>
+
+<button class="btn btn-success w-100 mb-3"
+onclick="saveCategory()">
+
++ Save Category
+
+</button>
+
+<hr>
+
+<h6 class="mb-3">Your Categories</h6>
+
+<div id="categoryList"
+style="max-height:200px; overflow-y:auto;">
+
+</div>
+
+</div>
+
+<div class="modal-footer">
+
+<button class="btn btn-secondary"
+data-bs-dismiss="modal">
+
+Close
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- CATEGORY JS -->
+
+<script>
+
+function loadCategories(){
+
+fetch("/categories")
+.then(res => res.json())
+.then(data => {
+
+let dropdown = document.getElementById("categoryDropdown")
+let list = document.getElementById("categoryList")
+
+dropdown.innerHTML = '<option value="">Select Category</option>'
+list.innerHTML = ""
+
+data.categories.forEach(cat => {
+
+let opt = document.createElement("option")
+opt.value = cat.category_name
+opt.text = cat.category_name
+dropdown.appendChild(opt)
+
+let row = document.createElement("div")
+row.className = "d-flex justify-content-between align-items-center mb-2"
+
+row.innerHTML = `<span>${cat.category_name}</span>`
+
+if(cat.type === "user"){
+
+let btn = document.createElement("button")
+btn.className = "btn btn-sm btn-danger"
+btn.innerText = "Delete"
+btn.onclick = function(){ deleteCategory(cat.id) }
+
+row.appendChild(btn)
+
+}
+
+list.appendChild(row)
+
+})
+
+})
+
+}
+
+function saveCategory(){
+
+let name = document.getElementById("newCategory").value.trim()
+
+if(name === ""){
+alert("Category name cannot be empty")
+return
+}
+
+if(name.length < 2){
+alert("Category name must be at least 2 characters")
+return
+}
+
+fetch("/add_category",{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"category_name="+encodeURIComponent(name)
+})
+.then(res=>res.json())
+.then(data=>{
+
+if(data.error){
+alert(data.error)
+return
+}
+
+document.getElementById("newCategory").value=""
+loadCategories()
+
+})
+
+}
+
+function deleteCategory(id){
+
+fetch("/delete_category",{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"category_id="+id
+})
+.then(()=>loadCategories())
+
+}
+
+document.addEventListener("DOMContentLoaded",loadCategories)
+
+</script>
+
+
+<!-- Disable button while saving -->
+
+<script>
+
+document.getElementById("expenseForm").addEventListener("submit", function() {
+
+const btn = document.getElementById("addExpenseBtn")
+
+btn.disabled = true
+btn.innerText = "Saving..."
+
+})
+
+</script>
+
+
+<!-- Prevent future dates -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+let today = new Date().toISOString().split("T")[0];
+
+document.getElementById("expenseDate").setAttribute("max", today);
+
+});
+
+</script>
+
+
+<div class="modal fade" id="noteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Note</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" id="noteContent"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function showNote(note) {
+    document.getElementById("noteContent").innerText = note;
+    var modal = new bootstrap.Modal(document.getElementById('noteModal'));
+    modal.show();
+}
+</script>
+
+
+{% set currency_symbols = {
+    'INR':'₹',
+    'USD':'$',
+    'EUR':'€',
+    'GBP':'£',
+    'JPY':'¥',
+    'AUD':'A$',
+    'CAD':'C$'
+} %}
+
+
+<!-- Salary + Balance -->
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+let selectedSalary = 0;
+let totalExpenses = 0;
+let alertTimeout;
+
+let currencySymbol = "{{ currency_symbols.get(currency, currency) }}";
+
+const dropdown = document.getElementById("salarySelect");
+const salaryText = document.getElementById("salaryAmount");
+const balanceText = document.getElementById("balanceAmount");
+const dateInput = document.getElementById("expenseDate");
+const alertBox = document.getElementById("budgetAlert");
+const amountInput = document.getElementById("amount");
+
+amountInput.addEventListener("input", function(){
+    updateUI();
+});
+
+
+
+
+// ✅ SHOW ALERT (AUTO HIDE)
+function showAlert(message, type){
+
+    alertBox.style.display = "block";
+    alertBox.className = `alert alert-${type} text-center shadow`;
+    alertBox.innerText = message;
+
+    if(alertTimeout){
+        clearTimeout(alertTimeout);
+    }
+
+    alertTimeout = setTimeout(() => {
+        alertBox.style.display = "none";
+    }, 3000);
+}
+
+
+// ✅ UPDATE BALANCE ONLY (NO ALERT HERE)
+function updateUI(){
+
+    // console.log("updateUI triggered"); // DEBUG
+
+    let currentExpense = parseFloat(amountInput.value) || 0;
+
+    let balance = selectedSalary - totalExpenses - currentExpense;
+
+    balanceText.innerText = currencySymbol + " " + balance.toLocaleString();
+
+    balanceText.style.color = balance < 0 ? "red" : "green";
+}
+
+//ALERT AFTER LOAD ONLY
+function checkAlertAfterLoad(){
+
+    let threshold = 80;
+
+    let percent = selectedSalary ? (totalExpenses / selectedSalary) * 100 : 0;
+
+    if(percent >= threshold && percent < 100){
+        showAlert(`⚠️ ${percent.toFixed(0)}% of salary used`, "warning");
+    }
+    else if(percent >= 100){
+        showAlert("🚨 Salary exceeded!", "danger");
+    }
+}
+
+
+// 🔥 DROPDOWN CHANGE
+dropdown.addEventListener("change", function(){
+
+    let selectedOption = dropdown.options[dropdown.selectedIndex];
+
+    let salary = selectedOption.getAttribute("data-salary");
+    let month = selectedOption.getAttribute("data-month");
+    let year = selectedOption.getAttribute("data-year");
+    let salaryId = selectedOption.value;
+
+    if(!salaryId){
+        window.location.href = `/add_expense?person_id={{ person_id }}`;
+        return;
+    }
+
+    // hide alert before reload
+    alertBox.style.display = "none";
+
+    selectedSalary = parseFloat(salary) || 0;
+
+    salaryText.innerText = currencySymbol + " " + selectedSalary.toLocaleString();
+    balanceText.innerText = currencySymbol + " " + selectedSalary.toLocaleString();
+
+    // lock date
+    if(month && year){
+        month = parseInt(month);
+        let m = month.toString().padStart(2,'0');
+
+        let minDate = `${year}-${m}-01`;
+        let lastDay = new Date(year, month, 0).getDate();
+        let maxDate = `${year}-${m}-${lastDay}`;
+
+        dateInput.min = minDate;
+        dateInput.max = maxDate;
+        dateInput.value = minDate;
+    }
+
+    window.location.href = `/add_expense?person_id={{ person_id }}&salary_id=${salaryId}`;
+});
+
+
+// 🔥 INITIAL LOAD (MAIN LOGIC)
+if(dropdown.value){
+
+    let selectedOption = dropdown.options[dropdown.selectedIndex];
+
+    let salary = selectedOption.getAttribute("data-salary");
+    let month = selectedOption.getAttribute("data-month");
+    let year = selectedOption.getAttribute("data-year");
+    let salaryId = dropdown.value;
+
+    selectedSalary = parseFloat(salary) || 0;
+
+    salaryText.innerText = currencySymbol + " " + selectedSalary.toLocaleString();
+
+    fetch(`/get_expense_total?salary_id=${salaryId}`)
+    .then(res => res.json())
+    .then(data => {
+
+        totalExpenses = data.total || 0;
+
+        updateUI();              // balance update
+        checkAlertAfterLoad();   // ✅ ALERT ONLY HERE
+    });
+
+    // lock date
+    if(month && year){
+        month = parseInt(month);
+        let m = month.toString().padStart(2,'0');
+
+        let minDate = `${year}-${m}-01`;
+        let lastDay = new Date(year, month, 0).getDate();
+        let maxDate = `${year}-${m}-${lastDay}`;
+
+        dateInput.min = minDate;
+        dateInput.max = maxDate;
+        dateInput.value = minDate;
+    }
+}
+
+
+// 🔥 HIDE ALERT ON SUBMIT (PREVENT FLICKER)
+document.getElementById("expenseForm").addEventListener("submit", function(){
+
+    const btn = document.getElementById("addExpenseBtn");
+
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+
+    alertBox.style.display = "none";
+});
+
+});
+</script>
+
+
+{% endblock %}

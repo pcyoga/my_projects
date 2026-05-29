@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 500px;">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Edit Expense</h4>
+
+    <a href="{{ url_for('add_expense', person_id=expense.person_id) }}"
+       class="btn btn-outline-secondary btn-sm">
+       ← Back
+    </a>
+  </div>
+
+  <!-- FORM -->
+  <form method="POST" class="p-3 bg-white shadow-sm rounded">
+    <input type="hidden" name="person_id" value="{{ expense.person_id }}">
+    <input type="hidden" name="salary_id" value="{{ expense.salary_id }}">
+
+    <!-- CATEGORY -->
+    <div class="mb-3">
+      <label class="form-label">Category</label>
+
+      <select name="category"
+              id="categoryDropdown"
+              class="form-select"
+              required>
+        <option value="">Select Category</option>
+      </select>
+    </div>
+
+    <!-- AMOUNT -->
+    <div class="mb-3">
+      <label class="form-label">Amount</label>
+      <input type="number"
+             step="0.01"
+             name="amount"
+             class="form-control"
+             value="{{ expense.amount }}"
+             required>
+    </div>
+
+    <!-- NOTE -->
+    <div class="mb-3">
+      <label class="form-label">Note</label>
+      <textarea name="note"
+                class="form-control"
+                rows="3">{{ expense.note }}</textarea>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="d-flex justify-content-between mt-4">
+
+      <button type="submit" class="btn btn-success">
+        ✔ Update
+      </button>
+
+      <a href="{{ url_for('add_expense', person_id=expense.person_id) }}"
+         class="btn btn-outline-secondary">
+         Cancel
+      </a>
+
+    </div>
+
+  </form>
+
+</div>
+
+<!-- CATEGORY SCRIPT -->
+<script>
+function loadCategories(){
+
+fetch("/categories")
+.then(res => res.json())
+.then(data => {
+
+let dropdown = document.getElementById("categoryDropdown")
+
+dropdown.innerHTML = '<option value="">Select Category</option>'
+
+let selectedCategory = "{{ expense.category }}"
+
+data.categories.forEach(cat => {
+
+let opt = document.createElement("option")
+opt.value = cat.category_name
+opt.text = cat.category_name
+
+if(cat.category_name === selectedCategory){
+    opt.selected = true
+}
+
+dropdown.appendChild(opt)
+
+})
+
+})
+}
+
+document.addEventListener("DOMContentLoaded", loadCategories)
+</script>
+
+{% endblock %}
