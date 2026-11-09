@@ -1,0 +1,6 @@
+{
+  "name": "PostureCare",
+  "description": "Personalized real-time posture monitoring and correction system with baseline calibration, live computer vision pose tracking, and wellness analytics.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
